@@ -1,10 +1,11 @@
-import React, { useState } from 'react'; 
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input } from 'antd';
-import './LoginPage.css';
+import './RegisterPage.css';
 
-const LoginPage = () => {
+const RegisterPage = () => {
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -12,22 +13,26 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!email || !password) {
-      setError('Email y contraseña son obligatorios');
+    if (!email || !username || !password) {
+      setError('Todos los campos son obligatorios');
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setError('Formato de email inválido');
       return;
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, username, password }),
       });
 
       const data = await response.json();
       if (response.ok) {
-        localStorage.setItem('token', data.token);
-        navigate('/dashboard');
+        alert("Usuario registrado con exito");
       } else {
         setError(data.message);
       }
@@ -37,8 +42,8 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="login-container">
-      <h2>Iniciar Sesión</h2>
+    <div className="register-container">
+      <h2>Registro</h2>
       {error && <p className="error">{error}</p>}
       <form onSubmit={handleSubmit}>
         <Input
@@ -46,24 +51,30 @@ const LoginPage = () => {
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="login-input"
+          className="register-input"
           style={{ marginBottom: '16px' }}
         />
-        <br></br>
+        <Input
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className="register-input"
+          style={{ marginBottom: '16px' }}
+        />
         <Input.Password
           placeholder="Contraseña"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="login-input"
+          className="register-input"
           style={{ marginBottom: '16px' }}
         />
-        <br></br>
-        <Button type="primary" htmlType="submit" className="login-button" block>
-          Ingresar
+        <Button type="primary" htmlType="submit" className="register-button" block>
+          Registrarse
         </Button>
       </form>
     </div>
   );
 };
 
-export default LoginPage;
+export default RegisterPage;

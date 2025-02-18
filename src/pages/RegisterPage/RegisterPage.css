@@ -1,0 +1,18 @@
+.register-container {
+    max-width: 500px;
+    margin: 50px auto;
+    padding: 100px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    text-align: center;
+    align-items: center;
+  }
+
+.button-login {
+    text-align: center;
+}
+
+h1 {
+  color: #1890ff;
+}
