@@ -49,7 +49,6 @@ const jwt = require('jsonwebtoken');
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
-  // Validaciones
   if (!email || !password) {
     return res.status(400).json({ message: 'Email y contraseña son obligatorios' });
   }
@@ -74,14 +73,66 @@ const loginUser = async (req, res) => {
     // Generar token JWT (expira en 10 minutos)
     const token = jwt.sign({ userId: userDoc.id }, 'secretKey', { expiresIn: '10m' });
 
-    // Actualizar last_login
-    await db.collection('USERS').doc(userDoc.id).update({ last_login: new Date() });
-
-    res.status(200).json({ token });
+    // Devolver el token y el ID del usuario
+    res.status(200).json({ token, userId: userDoc.id, username: user.username});
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error en el servidor' });
   }
 };
 
-module.exports = { registerUser, loginUser };
+const createTask = async (req, res) => {
+  const { nameTask, description, category, deadline, status, userId } = req.body;
+
+  // Validaciones
+  if (!nameTask || !description || !category || !deadline || !status || !userId) {
+    return res.status(400).json({ message: 'Todos los campos son obligatorios' });
+  }
+
+  try {
+    // Crear la tarea en Firestore
+    const taskRef = await db.collection('TASK').add({
+      NameTask: nameTask,
+      Description: description,
+      Category: category,
+      DeadLine: new Date(deadline),
+      Status: status,
+      IdUser: userId,
+    });
+
+    res.status(201).json({ message: 'Tarea creada exitosamente', taskId: taskRef.id });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error en el servidor' });
+  }
+};
+
+const getTasksByUser = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Obtener las tareas del usuario desde Firestore
+    const tasksRef = db.collection('TASK').where('IdUser', '==', userId);
+    const snapshot = await tasksRef.get();
+
+    if (snapshot.empty) {
+      return res.status(404).json({ message: 'No se encontraron tareas' });
+    }
+
+    const tasks = [];
+    snapshot.forEach((doc) => {
+      tasks.push({
+        id: doc.id,
+        nameTask: doc.data().NameTask,
+        status: doc.data().Status,
+      });
+    });
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error en el servidor' });
+  }
+};
+
+module.exports = { registerUser, loginUser, createTask, getTasksByUser};
