@@ -5,6 +5,10 @@ import LoginPage from './pages/LoginPage/LoginPage';
 import RegisterPage from './pages/RegisterPage/RegisterPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 import MainLayout from './layouts/MainLayout';
+import GroupsPage from './pages/GroupsPage/GroupsPage';
+import GroupDetailsPage from './pages/GroupDetailsPage/GroupDetailsPage';
+import CreateTaskPage from './pages/CreateTaskPage/CreateTaskPage';
+import TaskDetailsPage from './pages/TaskDetailsPage/TaskDetailsPage';
 
 function App() {
   return (
@@ -21,6 +25,10 @@ function App() {
             </MainLayout>
           }
         />
+        <Route path="/groups" element={<GroupsPage />} />
+        <Route path="/groups/:groupId" element={<GroupDetailsPage />} />
+        <Route path="/groups/:groupId/create-task" element={<CreateTaskPage />} />
+        <Route path="/tasks/:taskId" element={<TaskDetailsPage />} />
       </Routes>
     </Router>
   );

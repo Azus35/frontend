@@ -2,6 +2,13 @@
 const db = require('../firestore');
 const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
+const handleResponse = (res, statusCode, message, data = null) => {
+  if (data) {
+    res.status(statusCode).json({ message, data });
+  } else {
+    res.status(statusCode).json({ message });
+  }
+};
 
 const registerUser = async (req, res) => {
   const { email, username, password } = req.body;
@@ -82,10 +89,10 @@ const loginUser = async (req, res) => {
 };
 
 const createTask = async (req, res) => {
-  const { nameTask, description, category, deadline, status, userId } = req.body;
+  const { nameTask, description, category, deadline, status, userId, group} = req.body;
 
   // Validaciones
-  if (!nameTask || !description || !category || !deadline || !status || !userId) {
+  if (!nameTask || !description || !category || !deadline || !status || !userId  || !group) {
     return res.status(400).json({ message: 'Todos los campos son obligatorios' });
   }
 
@@ -98,6 +105,7 @@ const createTask = async (req, res) => {
       DeadLine: new Date(deadline),
       Status: status,
       IdUser: userId,
+      Group: group
     });
 
     res.status(201).json({ message: 'Tarea creada exitosamente', taskId: taskRef.id });
@@ -107,12 +115,17 @@ const createTask = async (req, res) => {
   }
 };
 
-const getTasksByUser = async (req, res) => {
-  const { userId } = req.params;
+const getTasksByGroup = async (req, res) => {
+  const { selectedGroup } = req.params; // Corregido el orden
 
   try {
-    // Obtener las tareas del usuario desde Firestore
-    const tasksRef = db.collection('TASK').where('IdUser', '==', userId);
+    if (!selectedGroup) {
+      return res.status(400).json({ message: 'Faltan parámetros requeridos' });
+    }
+
+    const tasksRef = db.collection('TASK')
+      .where('Group', '==', selectedGroup);
+
     const snapshot = await tasksRef.get();
 
     if (snapshot.empty) {
@@ -121,18 +134,235 @@ const getTasksByUser = async (req, res) => {
 
     const tasks = [];
     snapshot.forEach((doc) => {
+      const data = doc.data();
+
       tasks.push({
         id: doc.id,
-        nameTask: doc.data().NameTask,
-        status: doc.data().Status,
+        nameTask: data.NameTask || 'Sin nombre',
+        status: data.Status || 'Pendiente',
+        description: data.Description || '',
+        category: data.Category || 'Sin categoría',
+        deadline: data.DeadLine ? data.DeadLine.toDate() : null,
+        group: data.Group || selectedGroup
       });
     });
 
     res.status(200).json(tasks);
+  } catch (error) {
+    console.error('Error obteniendo tareas:', error);
+    res.status(500).json({ message: 'Error en el servidor', error: error.message });
+  }
+};
+
+const getUsers = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    if (!userId) {
+      return res.status(400).json({ message: 'Faltan parámetros requeridos' });
+    }
+
+    const usersRef = db.collection('USERS');
+    const snapshot = await usersRef.get();
+
+    if (snapshot.empty) {
+      return res.status(404).json({ message: 'No se encontraron usuarios' });
+    }
+
+    const users = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      
+      // Filtra manualmente los usuarios en lugar de usar 'not-in'
+      if (doc.id !== userId) {
+        users.push({
+          id: doc.id,
+          username: data.username,
+        });
+      }
+    });
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron usuarios' });
+    }
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error('Error obteniendo usuarios:', error);
+    res.status(500).json({ message: 'Error en el servidor', error: error.message });
+  }
+};
+
+const getGroupsByUser = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const groups = [];
+
+    // Consulta los grupos donde el usuario es el owner
+    const ownerSnapshot = await db.collection('GROUPS').where('ownerId', '==', userId).get();
+    ownerSnapshot.forEach((doc) => {
+      groups.push({
+        id: doc.id,
+        name: doc.data().name,
+        ownerId: doc.data().ownerId,
+      });
+    });
+
+    // Consulta los grupos donde el usuario es un miembro
+    const memberSnapshot = await db.collection('GROUPS').where('members', 'array-contains', userId).get();
+    memberSnapshot.forEach((doc) => {
+      // Evitar duplicados si el usuario es dueño y miembro
+      if (!groups.some(group => group.id === doc.id)) {
+        groups.push({
+          id: doc.id,
+          name: doc.data().name,
+          ownerId: doc.data().ownerId,
+        });
+      }
+    });
+
+    if (groups.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron grupos' });
+    }
+
+    res.status(200).json(groups);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error en el servidor' });
   }
 };
 
-module.exports = { registerUser, loginUser, createTask, getTasksByUser};
+
+const deleteTask = async (req, res) => {
+  const { taskId } = req.params;
+
+  try {
+    // Eliminar la tarea de Firestore
+    await db.collection('TASK').doc(taskId).delete();
+    res.status(200).json({ message: 'Tarea eliminada exitosamente' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error en el servidor' });
+  }
+};
+const updateTask = async (req, res) => {
+  const { taskId } = req.params;
+  const { nameTask, description, category, deadline, status } = req.body;
+
+  try {
+    // Actualizar la tarea en Firestore
+    await db.collection('TASK').doc(taskId).update({
+      NameTask: nameTask,
+      Description: description,
+      Category: category,
+      DeadLine: new Date(deadline),
+      Status: status,
+    });
+    res.status(200).json({ message: 'Tarea actualizada exitosamente' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error en el servidor' });
+  }
+};
+
+// Crear un grupo
+const createGroup = async (req, res) => {
+  console.log('Datos recibidos:', req.body);
+  const { name, ownerId } = req.body;
+
+  if (!name || !ownerId) {
+    return handleResponse(res, 400, 'Nombre y creador son obligatorios');
+  }
+
+  try {
+    const groupId = uuidv4();
+    await db.collection('GROUPS').doc(groupId).set({
+      name,
+      ownerId,
+      members: [ownerId],
+      tasks: [],
+    });
+
+    handleResponse(res, 201, 'Grupo creado exitosamente', { groupId });
+  } catch (error) {
+    console.error(error);
+    handleResponse(res, 500, 'Error en el servidor');
+  }
+};
+
+
+// Agregar un miembro al grupo
+const addMemberToGroup = async (req, res) => {
+  const { groupId, userId } = req.params; // Tomar ambos de los parámetros de la URL
+
+  if (!groupId || !userId) {
+    return handleResponse(res, 400, 'ID del grupo y del usuario son obligatorios');
+  }
+
+  try {
+    const groupRef = db.collection('GROUPS').doc(groupId);
+    const groupDoc = await groupRef.get();
+
+    if (!groupDoc.exists) {
+      return handleResponse(res, 404, 'Grupo no encontrado');
+    }
+
+    const currentMembers = groupDoc.data().members || [];
+
+    if (currentMembers.includes(userId)) {
+      return handleResponse(res, 400, 'El usuario ya es miembro del grupo');
+    }
+
+    await groupRef.update({
+      members: [...currentMembers, userId],
+    });
+
+    handleResponse(res, 200, 'Miembro agregado exitosamente');
+  } catch (error) {
+    console.error(error);
+    handleResponse(res, 500, 'Error en el servidor');
+  }
+};
+
+// Obtener tareas de un grupo
+const getGroupTasks = async (req, res) => {
+  const { groupId } = req.params;
+
+  try {
+    const tasksRef = db.collection('TASK').where('groupId', '==', groupId);
+    const snapshot = await tasksRef.get();
+
+    if (snapshot.empty) {
+      return handleResponse(res, 404, 'No se encontraron tareas');
+    }
+
+    const tasks = [];
+    snapshot.forEach((doc) => {
+      tasks.push({
+        id: doc.id,
+        ...doc.data(),
+        deadline: doc.data().deadline.toDate(), // Convertir a fecha legible
+      });
+    });
+
+    handleResponse(res, 200, 'Tareas obtenidas exitosamente', tasks);
+  } catch (error) {
+    console.error(error);
+    handleResponse(res, 500, 'Error en el servidor');
+  }
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
+  createTask,
+  getTasksByGroup,
+  deleteTask,
+  updateTask,
+  createGroup,
+  addMemberToGroup,
+  getGroupsByUser,
+  getUsers,
+  getGroupTasks,
+};
