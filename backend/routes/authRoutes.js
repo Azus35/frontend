@@ -11,6 +11,7 @@ const {
   addMemberToGroup,
   getUsers,
   getGroupsByUser,
+  getTasksByUser,
   getGroupTasks,
 } = require('../controllers/authController');
 
@@ -21,6 +22,7 @@ router.post('/register', registerUser);
 router.post('/login', loginUser);
 router.post('/tasks', createTask);
 router.get('/tasks/:selectedGroup', getTasksByGroup);
+router.get('/task/:userId', getTasksByUser);
 router.delete('/tasks/:taskId', deleteTask);
 router.put('/tasks/:taskId', updateTask);
 router.get('/users/:userId', getUsers)

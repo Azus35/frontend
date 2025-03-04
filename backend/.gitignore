@@ -1,0 +1,4 @@
+# Archivos de configuración sensibles
+task-app.json
+.env
+node_modules

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input } from 'antd';
+import AuthService from '../../services/authService'; // Importa el servicio
 import './RegisterPage.css';
 
 const RegisterPage = () => {
@@ -24,20 +25,11 @@ const RegisterPage = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, username, password }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        alert("Usuario registrado con exito");
-      } else {
-        setError(data.message);
-      }
+      await AuthService.register(email, username, password);
+      alert("Usuario registrado con éxito");
+      navigate('/login'); // Redirige al login tras registrar
     } catch (err) {
-      setError('Error en el servidor');
+      setError(err.response?.data?.message || 'Error en el servidor');
     }
   };
 

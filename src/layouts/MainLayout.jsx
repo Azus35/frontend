@@ -20,10 +20,10 @@ const MainLayout = ({ children }) => {
         </div>
         <Menu mode="inline" defaultSelectedKeys={['1']}>
           <Menu.Item key="1">
-            <Link to="/dashboard">Tareas</Link>
+            <Link to="/dashboard">Grupos</Link>
           </Menu.Item>
           <Menu.Item key="2">
-            <Link to="/dashboard/tasks">Configuración</Link>
+            <Link to="/dashboard/tasks">Tareas</Link>
           </Menu.Item>
           <Menu.Item key="3" onClick={handleLogout} style={{ color: 'red' }}> {/* Cerrar Sesión */}
             Cerrar Sesión

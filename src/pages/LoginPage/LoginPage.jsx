@@ -1,6 +1,7 @@
 import React, { useState } from 'react'; 
 import { useNavigate } from 'react-router-dom';
 import { Button, Input } from 'antd';
+import AuthService from '../../services/authService'; // Ajusta la ruta según tu estructura
 import './LoginPage.css';
 
 const LoginPage = () => {
@@ -18,23 +19,13 @@ const LoginPage = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('userId', data.userId);
-        localStorage.setItem('username', data.username);
-        navigate('/dashboard');
-      } else {
-        setError(data.message);
-      }
+      const data = await AuthService.login(email, password);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('userId', data.userId);
+      localStorage.setItem('username', data.username);
+      navigate('/dashboard');
     } catch (err) {
-      setError('Error en el servidor');
+      setError(err.message || 'Error en el servidor');
     }
   };
 

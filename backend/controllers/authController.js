@@ -89,24 +89,31 @@ const loginUser = async (req, res) => {
 };
 
 const createTask = async (req, res) => {
-  const { nameTask, description, category, deadline, status, userId, group} = req.body;
+  const { nameTask, description, category, deadline, status, userId, group } = req.body;
 
   // Validaciones
-  if (!nameTask || !description || !category || !deadline || !status || !userId  || !group) {
-    return res.status(400).json({ message: 'Todos los campos son obligatorios' });
+  if (!nameTask || !description || !category || !deadline || !status || !userId) {
+    return res.status(400).json({ message: 'Todos los campos son obligatorios, excepto el grupo' });
   }
 
   try {
-    // Crear la tarea en Firestore
-    const taskRef = await db.collection('TASK').add({
+    // Crear el objeto de la tarea
+    const taskData = {
       NameTask: nameTask,
       Description: description,
       Category: category,
       DeadLine: new Date(deadline),
       Status: status,
-      IdUser: userId,
-      Group: group
-    });
+      IdUser: userId
+    };
+
+    // Agregar la propiedad 'Group' solo si está presente en el cuerpo de la solicitud
+    if (group) {
+      taskData.Group = group;
+    }
+
+    // Crear la tarea en Firestore
+    const taskRef = await db.collection('TASK').add(taskData);
 
     res.status(201).json({ message: 'Tarea creada exitosamente', taskId: taskRef.id });
   } catch (error) {
@@ -114,6 +121,48 @@ const createTask = async (req, res) => {
     res.status(500).json({ message: 'Error en el servidor' });
   }
 };
+
+
+const getTasksByUser = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Obtener las tareas del usuario desde Firestore
+    const tasksRef = db.collection('TASK').where('IdUser', '==', userId);
+    const snapshot = await tasksRef.get();
+
+    if (snapshot.empty) {
+      return res.status(404).json({ message: 'No se encontraron tareas' });
+    }
+
+    const tasks = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+
+      // Solo agregar tareas que NO tengan el campo 'Grupo'
+      if (!data.hasOwnProperty('Group')) {
+        tasks.push({
+          id: doc.id,
+          nameTask: data.NameTask,
+          status: data.Status,
+          deadline: data.DeadLine ? data.DeadLine.toDate() : null,
+          category: data.Category,
+          description: data.Description
+        });
+      }
+    });
+
+    if (tasks.length === 0) {
+      return res.status(404).json({ message: 'No hay tareas sin grupo' });
+    }
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error('Error al obtener tareas:', error);
+    res.status(500).json({ message: 'Error en el servidor' });
+  }
+};
+
 
 const getTasksByGroup = async (req, res) => {
   const { selectedGroup } = req.params; // Corregido el orden
@@ -250,19 +299,38 @@ const updateTask = async (req, res) => {
   const { taskId } = req.params;
   const { nameTask, description, category, deadline, status } = req.body;
 
+  if (!taskId) {
+    return res.status(400).json({ message: "El ID de la tarea es obligatorio." });
+  }
+
   try {
-    // Actualizar la tarea en Firestore
-    await db.collection('TASK').doc(taskId).update({
-      NameTask: nameTask,
-      Description: description,
-      Category: category,
-      DeadLine: new Date(deadline),
-      Status: status,
-    });
-    res.status(200).json({ message: 'Tarea actualizada exitosamente' });
+    const taskRef = db.collection("TASK").doc(taskId);
+    const taskSnapshot = await taskRef.get();
+
+    if (!taskSnapshot.exists) {
+      return res.status(404).json({ message: "Tarea no encontrada." });
+    }
+
+    const updatedData = {
+      NameTask: nameTask || taskSnapshot.data().NameTask,
+      Description: description || taskSnapshot.data().Description,
+      Category: category || taskSnapshot.data().Category,
+      Status: status ?? taskSnapshot.data().Status,
+    };
+
+    if (deadline) {
+      const parsedDeadline = new Date(deadline);
+      if (isNaN(parsedDeadline.getTime())) {
+        return res.status(400).json({ message: "Formato de fecha inválido." });
+      }
+      updatedData.DeadLine = parsedDeadline;
+    }
+
+    await taskRef.update(updatedData);
+    res.status(200).json({ message: "Tarea actualizada exitosamente" });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error en el servidor' });
+    console.error("Error al actualizar la tarea:", error);
+    res.status(500).json({ message: "Error en el servidor" });
   }
 };
 
@@ -361,6 +429,7 @@ module.exports = {
   deleteTask,
   updateTask,
   createGroup,
+  getTasksByUser,
   addMemberToGroup,
   getGroupsByUser,
   getUsers,

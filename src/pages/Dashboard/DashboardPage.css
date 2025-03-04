@@ -42,6 +42,10 @@ p {
   margin-bottom: 8px;
 }
 
+.add-user-button {
+  margin-left: 8px;
+}
+
 .task-description {
   color: #666;
   margin-bottom: 8px;
