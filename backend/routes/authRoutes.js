@@ -13,6 +13,7 @@ const {
   getGroupsByUser,
   getTasksByUser,
   getGroupTasks,
+  updateUser,
 } = require('../controllers/authController');
 
 const router = express.Router();
@@ -30,5 +31,6 @@ router.post('/groups', createGroup);
 router.get('/groups/:userId', getGroupsByUser);
 router.post('/groups/:groupId/members/:userId', addMemberToGroup);
 router.get('/groups/:groupId/tasks', getGroupTasks);
+router.put('/users/:userId', updateUser);
 
 module.exports = router;

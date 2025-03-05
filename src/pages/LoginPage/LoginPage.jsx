@@ -23,6 +23,7 @@ const LoginPage = () => {
       localStorage.setItem('token', data.token);
       localStorage.setItem('userId', data.userId);
       localStorage.setItem('username', data.username);
+      localStorage.setItem('rol', data.rol);
       navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Error en el servidor');

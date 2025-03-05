@@ -6,6 +6,7 @@ import RegisterPage from './pages/RegisterPage/RegisterPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 import TaskPersonals from './pages/TaskPersonals/TaskPersonals';
 import MainLayout from './layouts/MainLayout';
+import UsersPage from './pages/UsersPage/UsersPage';
 import ProtectedRoute from './ProtectedRoute';
 
 const AppRoutes = () => {
@@ -20,6 +21,7 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<MainLayout><DashboardPage /></MainLayout>} />
         <Route path="/dashboard/tasks" element={<MainLayout><TaskPersonals /></MainLayout>} />
+        <Route path="/dashboard/users" element={<MainLayout><UsersPage /></MainLayout>} />
       </Route>
     </Routes>
   );

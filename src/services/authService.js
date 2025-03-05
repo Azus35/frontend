@@ -34,8 +34,11 @@ const AuthService = {
   getGroupTasks: (groupId) =>
     api.get(`/groups/tasks/${groupId}`).then((res) => res.data),
 
-  getUsers: () =>
-    api.get('/users').then((res) => res.data),
+  getUsers: (userId) =>
+    api.get(`/users/${userId}`).then((res) => res.data),
+
+  updateUser: (userId, userData) =>
+    api.put(`/users/${userId}`, userData).then((res) => res.data),
 };
 
 export default AuthService;

@@ -65,7 +65,7 @@ const DashboardPage = () => {
 
   const fetchUsers = async () => {
     try {
-      const data = await AuthService.getUsers();
+      const data = await AuthService.getUsers(userId);
       setUsers(data);
     } catch (err) {
       message.error('Error al obtener la lista de usuarios');

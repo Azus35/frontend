@@ -7,11 +7,16 @@ const { Header, Sider, Content } = Layout;
 
 const MainLayout = ({ children }) => {
   const navigate = useNavigate();
+  const rol = localStorage.getItem('rol');
+  
   const handleLogout = () => {
-    localStorage.removeItem('token'); // Eliminar el token del localStorage
-    localStorage.removeItem('userId'); // Eliminar el userId del localStorage
-    navigate('/login'); // Redirigir al usuario a la página de Login
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('username');
+    localStorage.removeItem('rol');
+    navigate('/login');
   };
+  
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider theme="light">
@@ -25,7 +30,12 @@ const MainLayout = ({ children }) => {
           <Menu.Item key="2">
             <Link to="/dashboard/tasks">Tareas</Link>
           </Menu.Item>
-          <Menu.Item key="3" onClick={handleLogout} style={{ color: 'red' }}> {/* Cerrar Sesión */}
+          {rol === 'admin' && (
+            <Menu.Item key="3">
+              <Link to="/dashboard/users">Usuarios</Link>
+            </Menu.Item>
+          )}
+          <Menu.Item key="4" onClick={handleLogout} style={{ color: 'red' }}>
             Cerrar Sesión
           </Menu.Item>
         </Menu>
