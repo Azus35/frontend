@@ -37,11 +37,23 @@ const LoginPage = () => {
       localStorage.setItem('rol', data.rol);
       navigate('/dashboard');
     } catch (err) {
-      // Modificamos el manejo del error para mostrar "credenciales incorrectas"
-      if (err.response && err.response.status === 401) {
-        setError('Credenciales incorrectas');
+      // Manejo de errores específico basado en tu backend
+      if (err.response) {
+        switch (err.response.data.message) {
+          case 'Usuario no encontrado':
+            setError('El email no está registrado');
+            break;
+          case 'Contraseña incorrecta':
+            setError('Contraseña incorrecta');
+            break;
+          case 'Email y contraseña son obligatorios':
+            setError('Email y contraseña son obligatorios');
+            break;
+          default:
+            setError('Error en el servidor');
+        }
       } else {
-        setError(err.message || 'Error en el servidor');
+        setError('No se pudo conectar con el servidor');
       }
     }
   };
