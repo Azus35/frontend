@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; // Añadimos useEffect
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input } from 'antd';
 import AuthService from '../../services/authService';
@@ -10,17 +10,16 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // Añadimos este useEffect para borrar el token si el usuario llega al login estando autenticado
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
       localStorage.removeItem('token');
-      localStorage.removeItem('userId'); // También borramos userId
-      localStorage.removeItem('username'); // También borramos username
+      localStorage.removeItem('userId');
+      localStorage.removeItem('username');
       localStorage.removeItem('rol');
       console.log('Credenciales borradas al navegar al login estando autenticado');
     }
-  }, []); // Se ejecuta solo al montar el componente
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,7 +37,12 @@ const LoginPage = () => {
       localStorage.setItem('rol', data.rol);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message || 'Error en el servidor');
+      // Modificamos el manejo del error para mostrar "credenciales incorrectas"
+      if (err.response && err.response.status === 401) {
+        setError('Credenciales incorrectas');
+      } else {
+        setError(err.message || 'Error en el servidor');
+      }
     }
   };
 
