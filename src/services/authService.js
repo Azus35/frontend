@@ -31,6 +31,9 @@ const AuthService = {
   addMemberToGroup: (groupId, userId) =>
     api.post(`/groups/${groupId}/members/${userId}`).then((res) => res.data),
 
+  removeMemberFromGroup: (groupId, userId) =>
+    api.delete(`/groups/${groupId}/members/${userId}`).then((res) => res.data),
+
   getGroupTasks: (groupId) =>
     api.get(`/groups/tasks/${groupId}`).then((res) => res.data),
 

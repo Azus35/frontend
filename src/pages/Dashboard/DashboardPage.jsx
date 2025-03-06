@@ -1,8 +1,9 @@
+// frontend/src/pages/DashboardPage.jsx
 import React, { useState, useEffect } from 'react';
 import { FloatButton, Modal, Button, Select, message, Form } from 'antd';
 import { PlusOutlined, UserAddOutlined } from '@ant-design/icons';
 import moment from 'moment';
-import AuthService from '../../services/authService'; // Importar AuthService
+import AuthService from '../../services/authService';
 import TaskForm from '../../components/TaskFormGroup';
 import GroupForm from '../../components/GroupForm';
 import UserListModal from '../../components/UserListModal';
@@ -49,6 +50,7 @@ const DashboardPage = () => {
 
   useEffect(() => {
     fetchGroups();
+    fetchUsers();
   }, []);
 
   const handleCreateGroup = async (values) => {
@@ -85,15 +87,33 @@ const DashboardPage = () => {
     }
 
     try {
+      const currentGroup = groups.find((group) => group.id === selectedGroup);
+      const currentMembers = currentGroup.members || [];
+
+      // Usuarios que se agregarán (en selectedUsers pero no en currentMembers)
+      const usersToAdd = selectedUsers.filter((userId) => !currentMembers.includes(userId));
+      // Usuarios que se eliminarán (en currentMembers pero no en selectedUsers)
+      const usersToRemove = currentMembers.filter((userId) => !selectedUsers.includes(userId));
+
+      // Agregar usuarios
       await Promise.all(
-        selectedUsers.map(async (userId) => {
+        usersToAdd.map(async (userId) => {
           await AuthService.addMemberToGroup(selectedGroup, userId);
         })
       );
-      message.success('Usuarios agregados al grupo');
+
+      // Eliminar usuarios
+      await Promise.all(
+        usersToRemove.map(async (userId) => {
+          await AuthService.removeMemberFromGroup(selectedGroup, userId);
+        })
+      );
+
+      message.success('Miembros del grupo actualizados');
       setIsUserModalVisible(false);
+      fetchGroups(); // Actualizamos los grupos para reflejar los cambios
     } catch (err) {
-      message.error('Error al agregar usuarios al grupo');
+      message.error('Error al actualizar los miembros del grupo');
     }
   };
 
@@ -164,6 +184,17 @@ const DashboardPage = () => {
     Completada: tasks.filter((task) => task.status === 'Completada'),
   };
 
+  const handleOpenUserModal = () => {
+    const currentGroup = groups.find((group) => group.id === selectedGroup);
+    if (currentGroup && currentGroup.members) {
+      setSelectedUsers(currentGroup.members);
+    } else {
+      setSelectedUsers([]);
+    }
+    fetchUsers();
+    setIsUserModalVisible(true);
+  };
+
   return (
     <div>
       <h1>Bienvenido, {username}</h1>
@@ -173,7 +204,7 @@ const DashboardPage = () => {
         style={{ width: '100%', marginBottom: '16px' }}
         onChange={setSelectedGroup}
       >
-        {groups.map(group => (
+        {groups.map((group) => (
           <Select.Option key={group.id} value={group.id}>
             {group.name}
           </Select.Option>
@@ -182,32 +213,27 @@ const DashboardPage = () => {
       <Button type="primary" onClick={() => setIsGroupModalVisible(true)}>
         Crear Grupo
       </Button>
-      {groups.map((group) => (
-        group.ownerId === userId && (
+      {selectedGroup &&
+        groups.some((group) => group.id === selectedGroup && group.ownerId === userId) && (
           <Button
-            key={group.id}
-            className='add-user-button'
+            className="add-user-button"
             type="default"
             icon={<UserAddOutlined />}
-            onClick={() => {
-              setIsUserModalVisible(true);
-              fetchUsers();
-            }}
+            onClick={handleOpenUserModal}
           >
             Agregar Miembros
           </Button>
-        )
-      ))}
+        )}
 
       <KanbanBoard
         tasksByStatus={tasksByStatus}
-        isOwner={groups.some(group => group.ownerId === userId)}
+        isOwner={groups.some((group) => group.ownerId === userId)}
         handleEdit={handleEdit}
         handleDelete={handleDelete}
         handleStatusChange={handleStatusChange}
       />
 
-      {groups.some(group => group.ownerId === userId) && (
+      {groups.some((group) => group.ownerId === userId) && (
         <FloatButton
           icon={<PlusOutlined />}
           type="primary"

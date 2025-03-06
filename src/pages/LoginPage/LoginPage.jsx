@@ -1,7 +1,7 @@
-import React, { useState } from 'react'; 
+import React, { useState, useEffect } from 'react'; // Añadimos useEffect
 import { useNavigate } from 'react-router-dom';
 import { Button, Input } from 'antd';
-import AuthService from '../../services/authService'; // Ajusta la ruta según tu estructura
+import AuthService from '../../services/authService';
 import './LoginPage.css';
 
 const LoginPage = () => {
@@ -9,6 +9,18 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  // Añadimos este useEffect para borrar el token si el usuario llega al login estando autenticado
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userId'); // También borramos userId
+      localStorage.removeItem('username'); // También borramos username
+      localStorage.removeItem('rol');
+      console.log('Credenciales borradas al navegar al login estando autenticado');
+    }
+  }, []); // Se ejecuta solo al montar el componente
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,7 +55,7 @@ const LoginPage = () => {
           className="login-input"
           style={{ marginBottom: '16px' }}
         />
-        <br></br>
+        <br />
         <Input.Password
           placeholder="Contraseña"
           value={password}
@@ -51,7 +63,7 @@ const LoginPage = () => {
           className="login-input"
           style={{ marginBottom: '16px' }}
         />
-        <br></br>
+        <br />
         <Button type="primary" htmlType="submit" className="login-button" block>
           Ingresar
         </Button>

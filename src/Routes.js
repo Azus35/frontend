@@ -8,6 +8,7 @@ import TaskPersonals from './pages/TaskPersonals/TaskPersonals';
 import MainLayout from './layouts/MainLayout';
 import UsersPage from './pages/UsersPage/UsersPage';
 import ProtectedRoute from './ProtectedRoute';
+import ProtectedRouteAdmin from './ProtectedRouteAdmin';
 
 const AppRoutes = () => {
   return (
@@ -17,11 +18,15 @@ const AppRoutes = () => {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Rutas protegidas */}
+      {/* Rutas protegidas para usuarios autenticados */}
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<MainLayout><DashboardPage /></MainLayout>} />
         <Route path="/dashboard/tasks" element={<MainLayout><TaskPersonals /></MainLayout>} />
-        <Route path="/dashboard/users" element={<MainLayout><UsersPage /></MainLayout>} />
+        
+        {/* Ruta protegida adicionalmente para admins */}
+        <Route element={<ProtectedRouteAdmin />}>
+          <Route path="/dashboard/users" element={<MainLayout><UsersPage /></MainLayout>} />
+        </Route>
       </Route>
     </Routes>
   );

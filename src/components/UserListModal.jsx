@@ -12,7 +12,7 @@ const UserListModal = ({ visible, onCancel, users, selectedUsers, handleUserSele
           Cancelar
         </Button>,
         <Button key="add" type="primary" onClick={handleAddUsers}>
-          Agregar
+          Actualizar
         </Button>,
       ]}
     >
